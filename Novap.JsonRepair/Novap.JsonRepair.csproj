@@ -22,6 +22,14 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Include="../README.nuget.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+  <Target Name="MergeReadme" BeforeTargets="GenerateNuspec">
+    <Exec Command="cat ../README.md ../README.zh-CN.md > ../README.nuget.md" />
+  </Target>
+
+  <ItemGroup>
     <InternalsVisibleTo Include="Novap.JsonRepair.Tests" />
   </ItemGroup>
 
