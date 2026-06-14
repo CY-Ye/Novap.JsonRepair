@@ -42,9 +42,43 @@ string? result = JsonRepairer.Repair(llmOutput);
 // 安全版本（不抛异常）
 if (JsonRepairer.TryRepair(llmOutput, out var json))
 {
-    var doc = JsonDocument.Parse(json);
-    // 使用解析后的 JSON...
+    // 使用修复后的 JSON 字符串
+    Console.WriteLine(json);
 }
+```
+
+### 使用 System.Text.Json 反序列化
+
+```csharp
+using System.Text.Json;
+using Novap.JsonRepair;
+
+string? json = JsonRepairer.Repair(llmOutput);
+if (json is not null)
+{
+    var user = JsonSerializer.Deserialize<User>(json);
+}
+
+public record User(string Name, int Age, string[] Hobbies);
+```
+
+### 使用 Newtonsoft.Json 反序列化
+
+```bash
+dotnet add package Newtonsoft.Json
+```
+
+```csharp
+using Newtonsoft.Json;
+using Novap.JsonRepair;
+
+string? json = JsonRepairer.Repair(llmOutput);
+if (json is not null)
+{
+    var user = JsonConvert.DeserializeObject<User>(json);
+}
+
+public record User(string Name, int Age, string[] Hobbies);
 ```
 
 ### API

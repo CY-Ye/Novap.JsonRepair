@@ -42,9 +42,43 @@ string? result = JsonRepairer.Repair(llmOutput);
 // Safe version (no exceptions thrown)
 if (JsonRepairer.TryRepair(llmOutput, out var json))
 {
-    var doc = JsonDocument.Parse(json);
-    // Use the parsed JSON...
+    // Use the repaired JSON string
+    Console.WriteLine(json);
 }
+```
+
+### Deserialize with System.Text.Json
+
+```csharp
+using System.Text.Json;
+using Novap.JsonRepair;
+
+string? json = JsonRepairer.Repair(llmOutput);
+if (json is not null)
+{
+    var user = JsonSerializer.Deserialize<User>(json);
+}
+
+public record User(string Name, int Age, string[] Hobbies);
+```
+
+### Deserialize with Newtonsoft.Json
+
+```bash
+dotnet add package Newtonsoft.Json
+```
+
+```csharp
+using Newtonsoft.Json;
+using Novap.JsonRepair;
+
+string? json = JsonRepairer.Repair(llmOutput);
+if (json is not null)
+{
+    var user = JsonConvert.DeserializeObject<User>(json);
+}
+
+public record User(string Name, int Age, string[] Hobbies);
 ```
 
 ### API
