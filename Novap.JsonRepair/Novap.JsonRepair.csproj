@@ -6,6 +6,19 @@
     <Nullable>enable</Nullable>
     <IsAotCompatible>true</IsAotCompatible>
     <IsTrimmable>true</IsTrimmable>
+
+    <PackageId>Novap.JsonRepair</PackageId>
+    <Version>1.0.0</Version>
+    <Authors>CY-Ye</Authors>
+    <Description>A lightweight .NET library for extracting and repairing malformed JSON from LLM response text.</Description>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/CY-Ye/Novap.JsonRepair</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/CY-Ye/Novap.JsonRepair</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageReadmeFile>README.nuget.md</PackageReadmeFile>
+    <PackageTags>json;repair;llm;parser;json-repair;ai</PackageTags>
+    <PackageReleaseNotes>Initial release</PackageReleaseNotes>
+    <Copyright>Copyright (c) 2026 CY-Ye</Copyright>
   </PropertyGroup>
 
   <ItemGroup>
