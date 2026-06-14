@@ -1,12 +1,9 @@
 name: Release to NuGet
 
 on:
-  workflow_dispatch:
-    inputs:
-      version:
-        description: 'Package version (e.g. 1.0.0)'
-        required: true
-        type: string
+  push:
+    tags:
+      - 'v*'
 
 jobs:
   release:
@@ -15,6 +12,10 @@ jobs:
       id-token: write  # Required for NuGet trusted publishing (OIDC)
     steps:
       - uses: actions/checkout@v4
+
+      - name: Extract version from tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
@@ -31,7 +32,7 @@ jobs:
         run: dotnet test --no-build --configuration Release --verbosity normal
 
       - name: Pack
-        run: dotnet pack Novap.JsonRepair/Novap.JsonRepair.csproj -p:Version=${{ inputs.version }} -o ./artifacts --configuration Release
+        run: dotnet pack Novap.JsonRepair/Novap.JsonRepair.csproj -p:Version=${{ steps.version.outputs.VERSION }} -o ./artifacts --configuration Release
 
       - name: NuGet login (OIDC -> temp API key)
         uses: NuGet/login@v1
