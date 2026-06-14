@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="Novap.JsonRepair.Tests/Novap.JsonRepair.Tests.csproj" />
+  <Project Path="Novap.JsonRepair/Novap.JsonRepair.csproj" />
+</Solution>
