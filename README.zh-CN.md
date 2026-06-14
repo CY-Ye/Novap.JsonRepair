@@ -101,7 +101,7 @@ public record User(string Name, int Age, string[] Hobbies);
 ## 特性
 
 - **零外部依赖** — 完全基于 .NET BCL，无任何第三方 NuGet 包
-- **AOT 兼容** — 使用 `Utf8JsonWriter` 序列化，避免反射，可在 Native AOT 场景中使用
+- **AOT 兼容** — 零反射代码，可在 Native AOT 场景中使用
 - **针对 LLM 场景优化** — 专门处理 LLM 输出中常见的 JSON 格式问题
 - **轻量级** — 源码精简，易于集成
 

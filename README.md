@@ -101,7 +101,7 @@ On repair failure, a `JsonRepairException` is thrown with the following addition
 ## Features
 
 - **Zero external dependencies** — built entirely on .NET BCL, no third-party NuGet packages
-- **AOT compatible** — uses `Utf8JsonWriter` for serialization, no reflection, works in Native AOT scenarios
+- **AOT compatible** — zero reflection code, works in Native AOT scenarios
 - **LLM-optimized** — specifically designed to handle common JSON formatting issues in LLM output
 - **Lightweight** — minimal source code, easy to integrate
 
