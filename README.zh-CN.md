@@ -27,7 +27,9 @@
 
 ### 安装
 
-> NuGet 包尚未发布，请通过项目引用使用。
+```bash
+dotnet add package Novap.JsonRepair
+```
 
 ### 基本用法
 

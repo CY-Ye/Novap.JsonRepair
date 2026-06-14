@@ -27,7 +27,9 @@ When LLMs output JSON, the responses often contain non-standard formatting such 
 
 ### Installation
 
-> NuGet package not yet published. Use project reference for now.
+```bash
+dotnet add package Novap.JsonRepair
+```
 
 ### Basic Usage
 
