@@ -67,7 +67,7 @@ public static class JsonRepairer
     private static string SerializeToString(object value)
     {
         using var buffer = new MemoryStream();
-        using (var writer = new Utf8JsonWriter(buffer))
+        using (var writer = new Utf8JsonWriter(buffer, new JsonWriterOptions { Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping }))
         {
             WriteValue(writer, value);
         }
