@@ -144,6 +144,7 @@ internal sealed partial class JsonParser
     {
         var remaining = _input.AsSpan(_index);
 
+        // JSON literals
         if (remaining.Length >= 4 && remaining[0] == 'n' && remaining[1] == 'u' && remaining[2] == 'l' && remaining[3] == 'l')
         {
             _index += 4;
@@ -155,6 +156,23 @@ internal sealed partial class JsonParser
             return true;
         }
         if (remaining.StartsWith("false"))
+        {
+            _index += 5;
+            return false;
+        }
+
+        // Python literals: None → null, True → true, False → false
+        if (remaining.StartsWith("None"))
+        {
+            _index += 4;
+            return null;
+        }
+        if (remaining.StartsWith("True"))
+        {
+            _index += 4;
+            return true;
+        }
+        if (remaining.StartsWith("False"))
         {
             _index += 5;
             return false;

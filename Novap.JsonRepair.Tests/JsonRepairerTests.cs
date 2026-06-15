@@ -144,4 +144,17 @@ public class JsonRepairerTests
         Assert.Equal("Alice", doc.RootElement.GetProperty("name").GetString());
         Assert.Equal(30, doc.RootElement.GetProperty("age").GetInt64());
     }
+
+    [Fact]
+    public void Repair_PythonConstants_ConvertedCorrectly()
+    {
+        var input = """{"name": "Alice", "active": True, "score": None, "verified": False}""";
+        var result = JsonRepairer.Repair(input);
+        Assert.NotNull(result);
+        var doc = JsonDocument.Parse(result);
+        Assert.Equal("Alice", doc.RootElement.GetProperty("name").GetString());
+        Assert.True(doc.RootElement.GetProperty("active").GetBoolean());
+        Assert.False(doc.RootElement.GetProperty("verified").GetBoolean());
+        Assert.Equal(JsonValueKind.Null, doc.RootElement.GetProperty("score").ValueKind);
+    }
 }

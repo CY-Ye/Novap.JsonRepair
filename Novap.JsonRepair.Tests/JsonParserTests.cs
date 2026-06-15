@@ -88,6 +88,16 @@ public class JsonParserTests
     }
 
     [Fact]
+    public void ParseString_PythonLiterals()
+    {
+        var result = JsonParser.Parse("[True, False, None]");
+        var arr = Assert.IsType<List<object?>>(result);
+        Assert.Equal(true, arr[0]);
+        Assert.Equal(false, arr[1]);
+        Assert.Null(arr[2]);
+    }
+
+    [Fact]
     public void ParseString_MissingQuotes_InArray()
     {
         var result = JsonParser.Parse("[hello world]");
