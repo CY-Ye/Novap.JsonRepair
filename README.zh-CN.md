@@ -22,6 +22,7 @@
 | 注释 | `# comment`、`// comment`、`/* comment */` |
 | 前后附加文字 | `Sure! Here is JSON:\n{...}\nLet me know.` |
 | 缺少值 | `{key:}` → 空字符串 |
+| Python 字面量 | `None` → `null`、`True` → `true`、`False` → `false` |
 
 ## 快速开始
 

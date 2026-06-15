@@ -22,6 +22,7 @@ When LLMs output JSON, the responses often contain non-standard formatting such 
 | Comments | `# comment`, `// comment`, `/* comment */` |
 | Surrounding text | `Sure! Here is JSON:\n{...}\nLet me know.` |
 | Missing values | `{key:}` → empty string |
+| Python literals | `None` → `null`, `True` → `true`, `False` → `false` |
 
 ## Quick Start
 
