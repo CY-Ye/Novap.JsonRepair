@@ -110,7 +110,7 @@ On repair failure, a `JsonRepairException` is thrown with the following addition
 
 Real-world evaluation with LLM-based writing style extraction (55 chunks across 2 novels, ~5000 chars each):
 
-| LLM Model | Direct Parse | With JsonRepair | Repair Overhead |
+| LLM Model | Direct Parse | With JsonRepair | Avg Repair Time |
 |-----------|-------------|-----------------|-----------------|
 | MiniMax-M2.7 | 39/55 (71%) | **55/55 (100%)** | 0.1ms |
 | MiniMax-M3 | 29/55 (53%) | **55/55 (100%)** | 0.3ms |
