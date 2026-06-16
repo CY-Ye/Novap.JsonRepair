@@ -120,6 +120,12 @@ public record User(string Name, int Age, string[] Hobbies);
 > LLM 经常在 JSON 外包裹 Markdown 围栏、添加解释文字或输出格式错误的 JSON。
 > `JsonRepairer.Repair()` 可在亚毫秒时间内恢复所有这些情况。
 
+## 使用案例
+
+使用 **Novap.JsonRepair** 的项目：
+
+- [Novap](https://apps.microsoft.com/store/detail/9P6GJ1M3MQ8F?cid=DevShareMCLPCS) — 基于 LLM 的小说写作助手，已上架 Microsoft Store。
+
 ## 技术栈
 
 - 目标框架：.NET 10.0

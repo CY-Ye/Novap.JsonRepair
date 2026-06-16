@@ -120,6 +120,12 @@ Real-world evaluation with LLM-based writing style extraction (55 chunks across 
 > LLMs frequently wrap JSON in markdown fences, prepend explanation text, or output malformed JSON.
 > `JsonRepairer.Repair()` recovers all of these cases in sub-millisecond time.
 
+## Showcase
+
+Projects using **Novap.JsonRepair**:
+
+- [Novap](https://apps.microsoft.com/store/detail/9P6GJ1M3MQ8F?cid=DevShareMCLPCS) — A novel writing assistant powered by LLM, available on Microsoft Store.
+
 ## Tech Stack
 
 - Target framework: .NET 10.0
