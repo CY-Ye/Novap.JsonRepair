@@ -1,5 +1,7 @@
 # Novap.JsonRepair
 
+[![NuGet](https://img.shields.io/nuget/v/Novap.JsonRepair)](https://www.nuget.org/packages/Novap.JsonRepair)
+
 **English** | [简体中文](README.zh-CN.md)
 
 A lightweight .NET library for extracting and repairing malformed JSON from LLM (Large Language Model) raw response text.

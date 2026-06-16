@@ -1,5 +1,7 @@
 # Novap.JsonRepair
 
+[![NuGet](https://img.shields.io/nuget/v/Novap.JsonRepair)](https://www.nuget.org/packages/Novap.JsonRepair)
+
 [English](README.md) | **简体中文**
 
 从 LLM（大语言模型）原始响应文本中提取并修复不规范 JSON 的轻量级 .NET 库。
