@@ -105,8 +105,37 @@ On repair failure, a `JsonRepairException` is thrown with the following addition
 
 - **Zero external dependencies** — built entirely on .NET BCL, no third-party NuGet packages
 - **AOT compatible** — zero reflection code, works in Native AOT scenarios
+- **Performance optimized** — `Span`/`ReadOnlySpan`-based parsing, `ArrayPool` reuse, minimal GC allocations
 - **LLM-optimized** — specifically designed to handle common JSON formatting issues in LLM output
 - **Lightweight** — minimal source code, easy to integrate
+
+## Performance
+
+Optimized with `Span<T>` / `ReadOnlySpan<char>` / `ArrayPool<T>` for minimal GC pressure. Key techniques:
+
+- **Span-based string parsing** — `ParseString()` uses direct `ReadOnlySpan<char>` slicing for strings without escape sequences, eliminating `StringBuilder` allocation entirely
+- **Span-based number parsing** — `ParseNumber()` calls `long.TryParse` / `double.TryParse` directly on `ReadOnlySpan<char>`, avoiding intermediate string allocation
+- **ArrayPool for validation** — `IsValidJson()` rents byte buffers from `ArrayPool<byte>` instead of allocating new arrays
+- **Zero-copy serialization** — `SerializeToString()` uses `MemoryStream.GetBuffer()` instead of `ToArray()`
+- **Switch-based char lookup** — hot-path character classification uses pattern-matching `is` expressions instead of `HashSet<char>`
+
+Benchmark results (.NET 10.0, Release, win-x64):
+
+| Scenario | Avg (μs) | Alloc (KB) |
+|:---------|--------:|-----------:|
+| Valid JSON (fast path) | 1.0 | 0.01 |
+| Valid JSON (large payload) | 4.2 | 0.01 |
+| Single quotes + trailing comma | 11.0 | 2.4 |
+| Unquoted keys | 9.8 | 2.4 |
+| Missing brackets | 11.4 | 2.8 |
+| Markdown fenced | 0.5 | 0.1 |
+| Python constants | 13.1 | 2.9 |
+| JSON with comments | 15.6 | 3.1 |
+| Mixed problems | 13.1 | 3.1 |
+| Large malformed (10 objects) | 67.0 | 18.6 |
+
+> Valid JSON fast path skips the repair parser entirely via `Utf8JsonReader` validation, completing in ~1μs with near-zero allocation.
+> Full benchmark script available at [`examples/BenchRepair.cs`](examples/BenchRepair.cs).
 
 ## Agent Integration Benchmark
 

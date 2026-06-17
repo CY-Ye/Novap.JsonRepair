@@ -105,8 +105,37 @@ public record User(string Name, int Age, string[] Hobbies);
 
 - **零外部依赖** — 完全基于 .NET BCL，无任何第三方 NuGet 包
 - **AOT 兼容** — 零反射代码，可在 Native AOT 场景中使用
+- **性能优化** — 基于 `Span`/`ReadOnlySpan` 解析、`ArrayPool` 复用，最小化 GC 分配
 - **针对 LLM 场景优化** — 专门处理 LLM 输出中常见的 JSON 格式问题
 - **轻量级** — 源码精简，易于集成
+
+## 性能
+
+通过 `Span<T>` / `ReadOnlySpan<char>` / `ArrayPool<T>` 优化，最大程度降低 GC 压力。核心优化手段：
+
+- **基于 Span 的字符串解析** — `ParseString()` 对无转义字符串直接使用 `ReadOnlySpan<char>` 切片，完全消除 `StringBuilder` 分配
+- **基于 Span 的数字解析** — `ParseNumber()` 直接在 `ReadOnlySpan<char>` 上调用 `long.TryParse` / `double.TryParse`，避免中间字符串分配
+- **ArrayPool 验证** — `IsValidJson()` 从 `ArrayPool<byte>` 租用字节缓冲区，而非每次分配新数组
+- **零拷贝序列化** — `SerializeToString()` 使用 `MemoryStream.GetBuffer()` 替代 `ToArray()`
+- **Switch 字符查找** — 热路径字符分类使用模式匹配 `is` 表达式替代 `HashSet<char>`
+
+基准测试结果（.NET 10.0, Release, win-x64）：
+
+| 场景 | 平均耗时 (μs) | 内存分配 (KB) |
+|:-----|------------:|------------:|
+| 有效 JSON（快速路径） | 1.0 | 0.01 |
+| 有效 JSON（大负载） | 4.2 | 0.01 |
+| 单引号 + 尾逗号 | 11.0 | 2.4 |
+| 无引号键名 | 9.8 | 2.4 |
+| 缺少闭合括号 | 11.4 | 2.8 |
+| Markdown 代码块包裹 | 0.5 | 0.1 |
+| Python 常量 | 13.1 | 2.9 |
+| 带注释的 JSON | 15.6 | 3.1 |
+| 多种问题混合 | 13.1 | 3.1 |
+| 大型畸形 JSON（10 个对象） | 67.0 | 18.6 |
+
+> 有效 JSON 快速路径通过 `Utf8JsonReader` 验证后直接返回，约 1μs 完成且几乎零分配。
+> 完整基准测试脚本见 [`examples/BenchRepair.cs`](examples/BenchRepair.cs)。
 
 ## Agent 集成实测
 
