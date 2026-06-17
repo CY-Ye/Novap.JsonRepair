@@ -1,58 +1,66 @@
-using System.Text;
+using System.Globalization;
 
 namespace Novap.JsonRepair.Parsing;
 
 internal sealed partial class JsonParser
 {
-    private static readonly HashSet<char> NumberChars = new("0123456789-.eE+_");
+    private static bool IsNumberChar(char c) => c is (>= '0' and <= '9') or '-' or '.' or 'e' or 'E' or '+' or '_';
 
     private object? ParseNumber()
     {
-        var sb = new StringBuilder();
         var isArray = _context.Current == ParseState.Array;
+        var start = _index;
+        var hasUnderscore = false;
 
         char? ch;
-        while ((ch = Peek()) is not null && NumberChars.Contains(ch.Value) && (!isArray || ch != ','))
+        while ((ch = Peek()) is not null && IsNumberChar(ch.Value) && (!isArray || ch != ','))
         {
-            if (ch != '_')
-                sb.Append(ch);
+            if (ch == '_') hasUnderscore = true;
             Advance();
         }
+
+        var length = _index - start;
 
         // 数字后跟字母 → 实际是字符串
         if (Peek() is { } next && char.IsLetter(next))
         {
-            _index -= sb.Length;
+            _index = start;
             return ParseString();
         }
 
-        var numberStr = sb.ToString();
-
         // 移除无效尾字符
-        if (numberStr.Length > 0 && numberStr[^1] is '-' or 'e' or 'E' or '/')
+        if (length > 0 && _input[start + length - 1] is '-' or 'e' or 'E' or '/')
         {
-            numberStr = numberStr[..^1];
+            length--;
             _index--;
         }
 
-        if (numberStr.Length == 0)
+        if (length == 0)
             return 0L;
 
-        if (numberStr.Contains(','))
-            return numberStr;
+        ReadOnlySpan<char> span = _input.AsSpan(start, length);
 
-        if (numberStr.Contains('.') || numberStr.Contains('e') || numberStr.Contains('E'))
+        // 有下划线则需要清理（Python 风格 1_000）
+        if (hasUnderscore)
         {
-            if (double.TryParse(numberStr, System.Globalization.NumberStyles.Float,
-                    System.Globalization.CultureInfo.InvariantCulture, out var d))
-                return d;
-            return numberStr;
+            // 极少走到这里，直接分配字符串去下划线
+            var cleaned = new string(span).Replace("_", "");
+            span = cleaned.AsSpan();
         }
 
-        if (long.TryParse(numberStr, System.Globalization.NumberStyles.Integer,
-                System.Globalization.CultureInfo.InvariantCulture, out var l))
+        if (span.Contains(','))
+            return span.ToString();
+
+        if (span.Contains('.') || span.Contains('e') || span.Contains('E'))
+        {
+            if (double.TryParse(span, NumberStyles.Float, CultureInfo.InvariantCulture, out var d))
+                return d;
+            return span.ToString();
+        }
+
+        if (long.TryParse(span, NumberStyles.Integer, CultureInfo.InvariantCulture, out var l))
             return l;
 
-        return numberStr;
+        return span.ToString();
     }
 }

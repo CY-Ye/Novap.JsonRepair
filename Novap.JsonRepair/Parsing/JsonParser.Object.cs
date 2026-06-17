@@ -92,7 +92,7 @@ internal sealed partial class JsonParser
             return "";
 
         // 有引号的键
-        if (StringDelimiters.Contains(ch.Value))
+        if (IsStringDelimiter(ch.Value))
         {
             return (string)ParseString()!;
         }

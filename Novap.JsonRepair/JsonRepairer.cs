@@ -1,3 +1,4 @@
+using System.Buffers;
 using System.Globalization;
 using System.Text;
 using System.Text.Json;
@@ -71,7 +72,7 @@ public static class JsonRepairer
         {
             WriteValue(writer, value);
         }
-        return Encoding.UTF8.GetString(buffer.ToArray());
+        return Encoding.UTF8.GetString(buffer.GetBuffer(), 0, (int)buffer.Length);
     }
 
     private static void WriteValue(Utf8JsonWriter writer, object? value)
@@ -133,15 +134,22 @@ public static class JsonRepairer
 
     private static bool IsValidJson(string json)
     {
+        var byteCount = Encoding.UTF8.GetByteCount(json);
+        var buffer = ArrayPool<byte>.Shared.Rent(byteCount);
         try
         {
-            var reader = new Utf8JsonReader(Encoding.UTF8.GetBytes(json));
+            Encoding.UTF8.GetBytes(json, 0, json.Length, buffer, 0);
+            var reader = new Utf8JsonReader(buffer.AsSpan(0, byteCount));
             while (reader.Read()) { }
             return true;
         }
         catch
         {
             return false;
+        }
+        finally
+        {
+            ArrayPool<byte>.Shared.Return(buffer);
         }
     }
 
@@ -163,6 +171,6 @@ public static class JsonRepairer
         if (fenceEnd < 0)
             return text;
 
-        return text[contentStart..fenceEnd].Trim();
+        return text.AsSpan(contentStart, fenceEnd - contentStart).Trim().ToString();
     }
 }

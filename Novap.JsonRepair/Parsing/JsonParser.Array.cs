@@ -15,7 +15,7 @@ internal sealed partial class JsonParser
             while (ch is not null && ch != ']' && ch != '}')
             {
                 // 字符串后跟 ':' → 可能是缺少 { 的对象
-                if (StringDelimiters.Contains(ch.Value))
+                if (IsStringDelimiter(ch.Value))
                 {
                     var lookAhead = SkipToChar(ch.Value, 1);
                     var afterStr = ScrollWhitespace(lookAhead + 1);

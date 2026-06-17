@@ -4,7 +4,7 @@ namespace Novap.JsonRepair.Parsing;
 
 internal sealed partial class JsonParser
 {
-    private static readonly HashSet<char> StringDelimiters = new(['"', '\'', '“', '”']);
+    private static bool IsStringDelimiter(char c) => c is '"' or '\'' or '“' or '”';
 
     private object? ParseString()
     {
@@ -14,7 +14,7 @@ internal sealed partial class JsonParser
             return ParseComment();
 
         // 跳过不属于字符串的非字母数字字符
-        while (ch is not null && !StringDelimiters.Contains(ch.Value) && !char.IsLetterOrDigit(ch.Value))
+        while (ch is not null && !IsStringDelimiter(ch.Value) && !char.IsLetterOrDigit(ch.Value))
         {
             Advance();
             ch = Peek();
@@ -88,8 +88,8 @@ internal sealed partial class JsonParser
             }
         }
 
-        // 扫描字符串体
-        var sb = new StringBuilder();
+        // 扫描字符串体 — 快路径：无转义时直接切片，零分配
+        var bodyStart = _index;
         while (true)
         {
             ch = Peek();
@@ -110,34 +110,63 @@ internal sealed partial class JsonParser
             // 到达右分隔符
             if (ch == rDelimiter && !missingQuotes)
             {
+                var result = _input.AsSpan(bodyStart, _index - bodyStart);
                 Advance();
-                break;
+                return result.ToString();
             }
 
             // 无引号模式下遇到逗号或容器闭合
             if (missingQuotes && ch is ',' or '}' or ']')
                 break;
 
-            // 转义字符
+            // 转义字符 → 回退到 StringBuilder 慢路径
             if (ch == '\\' && !missingQuotes)
             {
+                var sb = new StringBuilder();
+                sb.Append(_input.AsSpan(bodyStart, _index - bodyStart));
                 Advance();
                 var escaped = Peek();
-                if (escaped is null) break;
-                sb.Append(DecodeEscape(escaped.Value));
-                Advance();
-                continue;
+                if (escaped is not null)
+                {
+                    sb.Append(DecodeEscape(escaped.Value));
+                    Advance();
+                }
+                // 继续用 StringBuilder 完成剩余扫描
+                while (true)
+                {
+                    ch = Peek();
+                    if (ch is null) break;
+                    if (ch == rDelimiter)
+                    {
+                        Advance();
+                        break;
+                    }
+                    if (ch == '\\')
+                    {
+                        Advance();
+                        var esc = Peek();
+                        if (esc is null) break;
+                        sb.Append(DecodeEscape(esc.Value));
+                        Advance();
+                        continue;
+                    }
+                    sb.Append(ch);
+                    Advance();
+                }
+                return sb.ToString();
             }
 
-            sb.Append(ch);
             Advance();
         }
 
-        // 去除尾部空白（无引号模式）
+        // 无引号模式：去除尾部空白
         if (missingQuotes)
-            return sb.ToString().TrimEnd();
+        {
+            var span = _input.AsSpan(bodyStart, _index - bodyStart).TrimEnd();
+            return span.ToString();
+        }
 
-        return sb.ToString();
+        return _input.AsSpan(bodyStart, _index - bodyStart).ToString();
     }
 
     private object? TryParseBooleanOrNull()
