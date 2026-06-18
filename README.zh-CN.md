@@ -139,15 +139,23 @@ public record User(string Name, int Age, string[] Hobbies);
 
 ## Agent 集成实测
 
-使用 LLM 写作风格提取任务进行真实评测（55 个分块，每块约 5000 字）：
+使用 LLM 写作风格提取任务进行真实评测（3 部小说，共 37 个分块，每块约 5000 字）：
 
 | LLM 模型 | 直接解析 | 使用 JsonRepair | 平均修复耗时 |
 |----------|---------|----------------|------------|
-| MiniMax-M2.7 | 39/55 (71%) | **55/55 (100%)** | 0.1ms |
-| MiniMax-M3 | 29/55 (53%) | **55/55 (100%)** | 0.3ms |
+| MiniMax-M2.7 | 28/35 (80%) | **35/35 (100%)** | 0.3ms |
+| MiniMax-M3 | 7/27 (26%) | **27/27 (100%)** | 0.4ms |
 
 > LLM 经常在 JSON 外包裹 Markdown 围栏、添加解释文字或输出格式错误的 JSON。
 > `JsonRepairer.Repair()` 可在亚毫秒时间内恢复所有这些情况。
+
+<details>
+<summary>测试报告文件</summary>
+
+- [`MiniMax-M2.7`](examples/data/report/report-20260618-135027.json)
+- [`MiniMax-M3`](examples/data/report/report-20260618-102158.json)
+
+</details>
 
 ## 使用案例
 

@@ -139,15 +139,24 @@ Benchmark results (.NET 10.0, Release, win-x64):
 
 ## Agent Integration Benchmark
 
-Real-world evaluation with LLM-based writing style extraction (55 chunks across 2 novels, ~5000 chars each):
+Real-world evaluation with LLM-based writing style extraction (3 novels, 37 chunks total, ~5000 chars each):
 
 | LLM Model | Direct Parse | With JsonRepair | Avg Repair Time |
 |-----------|-------------|-----------------|-----------------|
-| MiniMax-M2.7 | 39/55 (71%) | **55/55 (100%)** | 0.1ms |
-| MiniMax-M3 | 29/55 (53%) | **55/55 (100%)** | 0.3ms |
+| MiniMax-M2.7 | 28/35 (80%) | **35/35 (100%)** | 0.3ms |
+| MiniMax-M3 | 7/27 (26%) | **27/27 (100%)** | 0.4ms |
 
 > LLMs frequently wrap JSON in markdown fences, prepend explanation text, or output malformed JSON.
 > `JsonRepairer.Repair()` recovers all of these cases in sub-millisecond time.
+
+<details>
+<summary>Report Files</summary>
+
+- [`MiniMax-M2.7`](examples/data/report/report-20260618-135027.json)
+- [`MiniMax-M3`](examples/data/report/report-20260618-102158.json)
+
+
+</details>
 
 ## Showcase
 

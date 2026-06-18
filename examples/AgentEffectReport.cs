@@ -326,7 +326,7 @@ var ImportanceOrder = new Dictionary<string, int>
 List<ExtractedWritingStyleContent> MergeResults(List<ExtractedWritingStyleContent[]> allChunks)
 {
     if (allChunks.Count == 0) return [];
-    if (allChunks.Count == 1) return [.. allChunks[0]];
+    if (allChunks.Count == 1) return allChunks[0].Where(x => !string.IsNullOrEmpty(x.Name)).ToList();
 
     var allItems = new List<(ExtractedWritingStyleContent Item, int ChunkIndex)>();
     for (int i = 0; i < allChunks.Count; i++)
@@ -337,12 +337,13 @@ List<ExtractedWritingStyleContent> MergeResults(List<ExtractedWritingStyleConten
     var seen = new Dictionary<string, (ExtractedWritingStyleContent Item, int Index)>();
     foreach (var entry in allItems)
     {
-        if (seen.TryGetValue(entry.Item.Name, out var existing))
+        var name = entry.Item.Name ?? "";
+        if (seen.TryGetValue(name, out var existing))
         {
             if (GetImportanceRank(entry.Item.Importance) < GetImportanceRank(existing.Item.Importance))
-                seen[entry.Item.Name] = (entry.Item, entry.ChunkIndex);
+                seen[name] = (entry.Item, entry.ChunkIndex);
         }
-        else seen[entry.Item.Name] = (entry.Item, entry.ChunkIndex);
+        else seen[name] = (entry.Item, entry.ChunkIndex);
     }
     var exactDeduped = seen.Values.OrderBy(x => x.Index).ToList();
 
@@ -366,13 +367,13 @@ List<ExtractedWritingStyleContent> MergeResults(List<ExtractedWritingStyleConten
     return result.Select(x => x.Item).ToList();
 }
 
-int GetImportanceRank(string importance)
-    => ImportanceOrder.TryGetValue(importance, out var rank) ? rank : 99;
+int GetImportanceRank(string? importance)
+    => importance is not null && ImportanceOrder.TryGetValue(importance, out var rank) ? rank : 99;
 
-double LevenshteinSimilarity(string s1, string s2)
+double LevenshteinSimilarity(string? s1, string? s2)
 {
     if (s1 == s2) return 1.0;
-    if (s1.Length == 0 || s2.Length == 0) return 0.0;
+    if (string.IsNullOrEmpty(s1) || string.IsNullOrEmpty(s2)) return 0.0;
     int distance = LevenshteinDistance(s1, s2);
     return 1.0 - (double)distance / Math.Max(s1.Length, s2.Length);
 }
@@ -515,7 +516,7 @@ Console.WriteLine();
 
 int totalFiles = 0, totalChunks = 0;
 int beforeSuccess = 0, afterSuccess = 0;
-int emptyOutputCount = 0;
+int emptyOutputCount = 0, llmErrorCount = 0;
 double totalRepairMs = 0, totalLlmMs = 0;
 int totalMergedItems = 0;
 bool hasErrors = false;
@@ -561,7 +562,7 @@ for (int fileIdx = 0; fileIdx < txtFiles.Length; fileIdx++)
                 LlmOutput = rawOutput,
                 LlmDurationMs = Math.Round(llmMs, 1),
                 Before = new ChunkBeforeLog { Success = beforeOk, Error = beforeError, Result = beforeResult },
-                After = new ChunkAfterLog { Success = afterOk, RepairedJson = repairedJson, RepairDurationMs = Math.Round(repairMs, 2), Result = afterResult },
+                After = new ChunkAfterLog { Success = afterOk, RepairedJson = repairedJson, RepairDurationMs = Math.Round(repairMs, 3), Result = afterResult },
             });
 
             Console.WriteLine($"│ │ [LLM 原始输出]");
@@ -601,10 +602,10 @@ for (int fileIdx = 0; fileIdx < txtFiles.Length; fileIdx++)
                     afterSuccess++;
                     totalRepairMs += repairMs;
                     Console.WriteLine($"│ │ [After  - 修复后解析] ✅ {afterResult!.Length} 条提取成功");
-                    Console.WriteLine($"│ │   ├─ 耗时: {repairMs:F1}ms");
+                    Console.WriteLine($"│ │   ├─ 耗时: {repairMs * 1000:F3}us");
                     Console.WriteLine($"│ │   └─ 结果:");
                     for (int i = 0; i < afterResult.Length; i++)
-                        Console.WriteLine($"│ │      {i + 1}. {afterResult[i].Name} [{afterResult[i].Importance}]");
+                        Console.WriteLine($"│ │      {i + 1}. {afterResult[i].Name ?? "(null)"} [{afterResult[i].Importance ?? "(null)"}]");
                     chunkResults.Add(afterResult);
                 }
                 else
@@ -616,6 +617,7 @@ for (int fileIdx = 0; fileIdx < txtFiles.Length; fileIdx++)
         catch (OperationCanceledException)
         {
             hasErrors = true;
+            llmErrorCount++;
             Console.ForegroundColor = ConsoleColor.Red;
             Console.WriteLine($"│ │ [超时] LLM 调用 3 次均超时（每次 3 分钟），已跳过");
             Console.ResetColor();
@@ -624,6 +626,7 @@ for (int fileIdx = 0; fileIdx < txtFiles.Length; fileIdx++)
         catch (Exception ex)
         {
             hasErrors = true;
+            llmErrorCount++;
             Console.ForegroundColor = ConsoleColor.Red;
             Console.WriteLine($"│ │ [错误] LLM 调用失败: {ex.Message}");
             Console.ResetColor();
@@ -642,7 +645,7 @@ for (int fileIdx = 0; fileIdx < txtFiles.Length; fileIdx++)
         Console.WriteLine($"│");
         Console.WriteLine($"│ [合并结果] {merged.Count} 条（去重前 {rawItemCount} 条）");
         for (int i = 0; i < merged.Count; i++)
-            Console.WriteLine($"│   {i + 1}. {merged[i].Name} [{merged[i].Importance}]");
+            Console.WriteLine($"│   {i + 1}. {merged[i].Name ?? "(null)"} [{merged[i].Importance ?? "(null)"}]");
     }
 
     Console.WriteLine($"└─────────────────────────────────────────────────────────");
@@ -660,9 +663,10 @@ var report = new ReportLog
         TotalFiles = totalFiles,
         TotalChunks = totalChunks,
         EmptyOutputCount = emptyOutputCount,
-        BeforeSuccessRate = $"{beforeSuccess}/{totalChunks - emptyOutputCount} ({((totalChunks - emptyOutputCount) > 0 ? 100.0 * beforeSuccess / (totalChunks - emptyOutputCount) : 0):F0}%)",
-        AfterSuccessRate = $"{afterSuccess}/{totalChunks - emptyOutputCount} ({((totalChunks - emptyOutputCount) > 0 ? 100.0 * afterSuccess / (totalChunks - emptyOutputCount) : 0):F0}%)",
-        AvgRepairMs = afterSuccess > 0 ? Math.Round(totalRepairMs / afterSuccess, 1) : 0,
+        LlmErrorCount = llmErrorCount,
+        BeforeSuccessRate = $"{beforeSuccess}/{totalChunks - emptyOutputCount - llmErrorCount} ({((totalChunks - emptyOutputCount - llmErrorCount) > 0 ? 100.0 * beforeSuccess / (totalChunks - emptyOutputCount - llmErrorCount) : 0):F0}%)",
+        AfterSuccessRate = $"{afterSuccess}/{totalChunks - emptyOutputCount - llmErrorCount} ({((totalChunks - emptyOutputCount - llmErrorCount) > 0 ? 100.0 * afterSuccess / (totalChunks - emptyOutputCount - llmErrorCount) : 0):F0}%)",
+        AvgRepairMs = afterSuccess > 0 ? Math.Round(totalRepairMs / afterSuccess, 3) : 0,
         AvgLlmDurationMs = totalChunks > 0 ? Math.Round(totalLlmMs / totalChunks / 1000, 1) : 0,
     },
 };
@@ -676,10 +680,11 @@ Console.WriteLine("════════════════════�
 Console.WriteLine($"  文件总数:          {totalFiles}");
 Console.WriteLine($"  分块总数:          {totalChunks}");
 Console.WriteLine($"  空输出:            {emptyOutputCount} 块（不计入成功率）");
-var validChunks = totalChunks - emptyOutputCount;
+Console.WriteLine($"  LLM 运行错误:      {llmErrorCount} 块（不计入成功率）");
+var validChunks = totalChunks - emptyOutputCount - llmErrorCount;
 Console.WriteLine($"  直接解析成功率:     {beforeSuccess}/{validChunks} ({(validChunks > 0 ? 100.0 * beforeSuccess / validChunks : 0):F0}%)");
 Console.WriteLine($"  修复后成功率:       {afterSuccess}/{validChunks} ({(validChunks > 0 ? 100.0 * afterSuccess / validChunks : 0):F0}%)");
-Console.WriteLine($"  平均修复耗时:       {(afterSuccess > 0 ? totalRepairMs / afterSuccess : 0):F1}ms");
+Console.WriteLine($"  平均修复耗时:       {(afterSuccess > 0 ? totalRepairMs / afterSuccess * 1000 : 0):F3}us");
 Console.WriteLine($"  平均 LLM 响应时间:  {(validChunks > 0 ? totalLlmMs / validChunks / 1000 : 0):F1}s");
 Console.WriteLine($"  合并后平均条目数:   {(totalFiles > 0 ? (double)totalMergedItems / totalFiles : 0):F1} 条/文件");
 Console.WriteLine($"  日志已保存:         {reportPath}");
@@ -733,6 +738,7 @@ public record SummaryLog
     public int TotalFiles { get; init; }
     public int TotalChunks { get; init; }
     public int EmptyOutputCount { get; init; }
+    public int LlmErrorCount { get; init; }
     public string BeforeSuccessRate { get; init; } = "";
     public string AfterSuccessRate { get; init; } = "";
     public double AvgRepairMs { get; init; }
