@@ -165,7 +165,7 @@ public record User(string Name, int Age, string[] Hobbies);
 
 ## 技术栈
 
-- 目标框架：.NET 10.0
+- 目标框架：.NET 8.0、.NET 10.0
 - 语言：C#
 - 测试：xunit
 

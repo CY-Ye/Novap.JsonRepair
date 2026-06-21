@@ -166,7 +166,7 @@ Projects using **Novap.JsonRepair**:
 
 ## Tech Stack
 
-- Target framework: .NET 10.0
+- Target framework: .NET 8.0, .NET 10.0
 - Language: C#
 - Testing: xunit
 
